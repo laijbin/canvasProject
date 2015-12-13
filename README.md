@@ -1,2 +1,2 @@
 # canvasProject
-using canvas create things.
+using canvas to create things.
