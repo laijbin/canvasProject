@@ -85,30 +85,30 @@ MapLevel.prototype ={
 		context.lineWidth=16;
 		context.strokeStyle = "#000000"; 
 		context.strokeRect(8,8, theCanvas.width-16, theCanvas.height-16);
-		// tankBgimg.addEventListener('load', function(){
-		// 	for(var i=0;i<=10;i++){
-		// 		for(var j=0;j<=14;j++){
-		// 			colCtr=j*32+16;
-		// 			rowCtr=i*32+16;
-		// 			context.save();
-		// 			sourceX=Math.floor(scene[i][j]%8)*32;
-		// 			sourceY=Math.floor(scene[i][j]/8)*32;
-		// 			context.drawImage(tankBgimg, sourceX,sourceY,32,32,colCtr,rowCtr,32,32);
-		// 			context.restore();
-		// 		}
-		// 	}
-		// }, false);
-		for(var i=0;i<=10;i++){
-			for(var j=0;j<=14;j++){
-				colCtr=j*32+16;
-				rowCtr=i*32+16;
-				context.save();
-				sourceX=Math.floor(scene[i][j]%8)*32;
-				sourceY=Math.floor(scene[i][j]/8)*32;
-				context.drawImage(tankBgimg, sourceX,sourceY,32,32,colCtr,rowCtr,32,32);
-				context.restore();
+		tankBgimg.addEventListener('load', function(){
+			for(var i=0;i<=10;i++){
+				for(var j=0;j<=14;j++){
+					colCtr=j*32+16;
+					rowCtr=i*32+16;
+					context.save();
+					sourceX=Math.floor(scene[i][j]%8)*32;
+					sourceY=Math.floor(scene[i][j]/8)*32;
+					context.drawImage(tankBgimg, sourceX,sourceY,32,32,colCtr,rowCtr,32,32);
+					context.restore();
+				}
 			}
-		}
+		}, false);
+		// for(var i=0;i<=10;i++){
+		// 	for(var j=0;j<=14;j++){
+		// 		colCtr=j*32+16;
+		// 		rowCtr=i*32+16;
+		// 		context.save();
+		// 		sourceX=Math.floor(scene[i][j]%8)*32;
+		// 		sourceY=Math.floor(scene[i][j]/8)*32;
+		// 		context.drawImage(tankBgimg, sourceX,sourceY,32,32,colCtr,rowCtr,32,32);
+		// 		context.restore();
+		// 	}
+		// }
 		
 	}
 	
