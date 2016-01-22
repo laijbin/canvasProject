@@ -1,0 +1,304 @@
+<!DOCTYPE>  
+<html>  
+<head>  
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- http://www.html5china.com/course/20101103_650.html 代码重构与拓展 -->  
+<title>蘑菇小熊游戏</title>   
+  
+</head>  
+  
+<body>  
+    <div id="container" style="border:1px solid; cursor:none; width:480px; height:320px;">  
+        <canvas id="canvas" width="480" height="320" >  
+        </canvas>  
+    </div>  
+    <script type="text/javascript" > 
+    window.requestAnimFrame = (function(){
+      return  window.requestAnimationFrame       ||
+              window.webkitRequestAnimationFrame ||
+              window.mozRequestAnimationFrame    ||
+              function( callback ){
+                window.setTimeout(callback, 1000 / 60);
+              };
+    })();
+    ;(function(){
+        'use strict';
+    
+        //commom
+        function Sprite(x, y, img, src) {
+            this.x = x;
+            this.y = y;
+            this.src = src;
+            this.image = img;
+        }
+        Sprite.prototype.CheckHit = function(obj,overlap) {
+                //    x-轴                      x-轴
+            //  A1------>B1 C1              A2------>B2 C2
+            //  +--------+   ^              +--------+   ^
+            //  | object1|   | y-轴         | object2|   | y-轴
+            //  |        |   |              |        |   |
+            //  +--------+  D1              +--------+  D2
+            //
+            //overlap是重叠的区域值
+            if (overlap == undefined) {
+                overlap = 5;
+            }
+            var A1 = this.x + overlap,
+                B1 = this.x + this.image.width - overlap,
+                C1 = this.y + overlap,
+                D1 = this.y + this.image.height - overlap,
+                A2 = obj.x + overlap,
+                B2 = obj.x + obj.image.width - overlap,
+                C2 = obj.y + overlap,
+                D2 = obj.y + obj.image.width - overlap;
+         
+            //假如他们在x-轴重叠
+            if(A1 > A2 && A1 < B2
+               || B1 > A2 && B1 < B2)
+            {
+                //判断y-轴重叠
+                if(C1 > C2 && C1 < D2
+               || D1 > C2 && D1 < D2)
+                {
+                    //碰撞
+                    return true;
+                }
+         
+            }
+            return false;
+        }
+        //bearGame
+        function BearGameApp(){
+            var canvas = document.getElementById('canvas');
+            this.ctx = canvas.getContext('2d');
+            this.gameOver = false;
+            this.gameWidth = canvas.width;
+            this.gameHeight = canvas.height;
+        }
+        BearGameApp.prototype = {
+            startGame : function() {
+                this.loadImages();
+                var that = this,
+                    images = this.imgsName;
+                
+                this.prizes = new Prize();
+                this.prizes.initPrizes([images[3],images[5],images[4]]);
+                this.mushroom = new Mushroom(parseInt(this.gameWidth/2),this.gameHeight-40,images[2]);
+                this.mushroom.eventHandlers();
+                this.bear = new Bear(parseInt(this.gameWidth/2),parseInt(this.gameHeight/2),images[1]);
+                this.loop();
+            },
+            loadImages : function() {
+                var bgImg,
+                    bearImg,
+                    mushroomImg,
+                    flowerImg,//奖品鲜花
+                    leafImg,//奖品叶子
+                    acornImg ;
+                this.imgsName = [bgImg, bearImg, mushroomImg, flowerImg, leafImg, acornImg];
+                this.imgsUrl = ['images/forest1.jpg','images/bear_eyesclosed.png','images/mushroom.png','images/flower.png','images/leaf.png','images/acorn.png'];
+                for (var i = 0; i < this.imgsUrl.length; i++) {
+                    this.imgsName[i] = new Image();
+                    this.imgsName[i].src = this.imgsUrl[i];
+                }
+                return this;
+            },
+            drawBg : function() {
+                var that = this;
+                that.ctx.drawImage(that.imgsName[0], 0, 0);  
+            },
+            clear : function() {
+                this.ctx.clearRect(0, 0, this.gameWidth, this.gameHeight);
+                this.ctx.save();
+            },
+            loop : function() {
+                var that = this,
+                    ctx = this.ctx;
+                this.clear();
+                this.drawBg();
+                this.prizes.drawPrizes(ctx);
+                this.mushroom.draw(ctx)
+                this.bear.draw(ctx);
+                this.hitEdge();
+                this.bear.hasBearHitMushroom(this.mushroom);
+                this.bear.hasAnimalHitPrize(this.prizes.prizes);
+                requestAnimFrame(function(){
+                    that.loop();
+                });
+            },
+            hitEdge : function() {
+                var animal = this.bear;
+                if(animal.x>this.gameWidth - animal.image.width){
+                    if(animal.horizontalSpeed > 0)//假如向右移动
+                        animal.horizontalSpeed =-animal.horizontalSpeed;//改变水平速度方向
+                }
+                //熊碰到左边边界
+                if(animal.x<-10)
+                {
+                    if(animal.horizontalSpeed < 0)//假如向左移动
+                        animal.horizontalSpeed = -animal.horizontalSpeed;//改变水平速度方向
+                }
+                //熊碰到下面边界
+                if(animal.y>this.gameHeight - animal.image.height)
+                {
+                    animal.verticalSpeed = -animal.verticalSpeed;
+                }
+                //熊碰到上边边界
+                if(animal.y<0)
+                {
+                    animal.verticalSpeed = -animal.verticalSpeed;
+                }
+            }
+        }
+        //mushroom
+        function Mushroom(x, y, img, src) {
+            Sprite.call(this, x, y, img, 'mushroom');
+        }
+        Mushroom.prototype.draw = function(ctx) {
+            ctx.drawImage(this.image, this.x, this.y);
+        }
+        Mushroom.prototype.eventHandlers = function() {
+            var that = this;
+            document.getElementById('container').onmousemove = function(e){   
+                that.x = e.pageX - (that.image.width/2);
+                // console.log(that.x);
+            };
+        }
+        //bear
+        function Bear(x, y, img, src) {
+            Sprite.call(this, x, y, img, 'bear');
+            this.speed = 3;//不变常量,熊开始的速度  
+            this.bearAngle = 2;
+            this.angle = 0;
+            this.horizontalSpeed = this.speed;
+            this.verticalSpeed = -this.speed;
+        }
+        Bear.prototype = new Sprite();
+        Bear.prototype.resetPos = function() {
+            this.x += this.horizontalSpeed;
+            this.y += this.verticalSpeed;
+            this.angle += this.bearAngle;
+        }
+        Bear.prototype.draw = function(ctx) {
+            this.resetPos();
+            ctx.translate(this.x + (this.image.width/2), this.y + (this.image.height/2));
+            ctx.rotate(this.angle * Math.PI/180);
+            ctx.drawImage(this.image, - (this.image.width/2), - (this.image.height/2));
+            ctx.restore();
+        }
+        Bear.prototype.hasBearHitMushroom = function(mushroom){
+            //假如碰撞
+            if(this.CheckHit(mushroom)){
+                //假如碰撞的位置属于蘑菇的左下位置
+                if((this.x + this.image.width/2) < (mushroom.x + mushroom.image.width*0.25))
+                {
+                    this.horizontalSpeed = -this.speed;//反弹
+                }
+                //假如碰撞的位置属于蘑菇的左上位置
+                else if((this.x + this.image.width/2) < (mushroom.x + mushroom.image.width*0.5))
+                {
+                    //反弹速度减半
+                    this.horizontalSpeed = -this.speed/2;
+                }
+                //假如碰撞的位置属于蘑菇的右上位置
+                else if((this.x + this.image.width/2) < (mushroom.x + mushroom.image.width*0.75))
+                {
+                    this.horizontalSpeed = this.speed/2;
+                }
+                else
+                {
+                    this.horizontalSpeed = this.speed;
+                }
+                this.verticalSpeed = -this.speed;//改变垂直速度。也即动物向上移动
+         
+            }
+        }
+        Bear.prototype.hasAnimalHitPrize = function(prizes){
+        //取出所有奖品
+            for(var i=0; i<prizes.length; i++)
+            {
+                var prize = prizes[i];
+                //假如没有碰撞过
+                if(!prize.hit)
+                {
+                    //判断碰撞
+                    if(this.CheckHit(prize,0))
+                    {
+                        // prize.hit = true;
+                        prize.spinning = true;
+                        //熊反弹下沉
+                        this.verticalSpeed = this.speed;
+                    }
+                }
+            }
+        }
+        //price
+        function Prize(x, y, img, src) {
+            Sprite.call(this,x, y, img, 'prize');
+            this.prizes = [];
+            this.hit = false;
+            this.angle = 0;
+            this.spinning = false;
+        }
+        Prize.prototype = new Sprite();
+        Prize.prototype.initPrizes = function(imgs) {
+            var count=0,
+                flowerImg = imgs[0],
+                acornImg = imgs[1],
+                leafImg = imgs[2];
+            //3行
+            for(var x=0; x<3; x++) {
+                for(var y=0; y<23; y++) {
+                    var prize = new Prize();
+                    if(x==0)
+                        prize.image = flowerImg;//鲜花放在第一行
+                    if(x==1)
+                        prize.image = acornImg;//豫子刚在第2行
+                    if(x==2)
+                        prize.image = leafImg;//叶子放在第3行
+                        
+                    prize.row = x;
+                    prize.col = y;
+                    prize.x = 20 * prize.col + 10;//x轴位置
+                    prize.y = 30 * prize.row + 20;//y轴位置
+                    //撞到奖品数组，用来描绘
+                    this.prizes[count] = prize;
+                    count++;
+                }
+            }
+        }
+        Prize.prototype.drawPrizes = function(ctx) {
+            var prizes = this.prizes;
+            for(var i=0; i<prizes.length; i++){
+                var curPrize = prizes[i];
+                if (!curPrize.hit) {
+                    if (curPrize.spinning) {
+                        curPrize.angle += 10;
+                        ctx.save();
+                        ctx.translate(curPrize.x + (curPrize.image.width/2), curPrize.y + (curPrize.image.height/2));
+                    
+                        //Perform the rotation based on the current prize angle
+                        ctx.rotate(curPrize.angle * Math.PI/180);
+                        
+                        ctx.drawImage(curPrize.image, - (curPrize.image.width/2), - (curPrize.image.width/2));
+                        ctx.restore();
+                        
+                        if(curPrize.angle == 360)
+                        {
+                            curPrize.hit = true;
+                        }
+                        
+                    } else {
+                        ctx.drawImage(curPrize.image, curPrize.x, curPrize.y);
+                    }
+                }
+            }
+        }
+        window.onload = function() {
+            var bearGame = new BearGameApp();
+            bearGame.startGame()
+        }
+    })();
+    </script>
+</body>  
+</html>  
