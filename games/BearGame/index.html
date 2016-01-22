@@ -1,8 +1,8 @@
 <!DOCTYPE>  
 <html>  
 <head>  
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />  
-<!-- http://www.html5china.com/course/20101103_650.html 代码重构与拓展 -->
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- http://www.html5china.com/course/20101103_650.html 代码重构与拓展 -->  
 <title>蘑菇小熊游戏</title>   
   
 </head>  
@@ -13,6 +13,15 @@
         </canvas>  
     </div>  
     <script type="text/javascript" > 
+    window.requestAnimFrame = (function(){
+      return  window.requestAnimationFrame       ||
+              window.webkitRequestAnimationFrame ||
+              window.mozRequestAnimationFrame    ||
+              function( callback ){
+                window.setTimeout(callback, 1000 / 60);
+              };
+    })();
+
     ;(function(){
         'use strict';
     
@@ -79,9 +88,7 @@
                 this.mushroom = new Mushroom(parseInt(this.gameWidth/2),this.gameHeight-40,images[2]);
                 this.mushroom.eventHandlers();
                 this.bear = new Bear(parseInt(this.gameWidth/2),parseInt(this.gameHeight/2),images[1]);
-                setInterval(function(){
-                    that.loop()
-                },10)
+                this.loop();
             },
             loadImages : function() {
                 var bgImg,
@@ -107,7 +114,8 @@
                 this.ctx.save();
             },
             loop : function() {
-                var ctx = this.ctx;
+                var that = this,
+                    ctx = this.ctx;
                 this.clear();
                 this.drawBg();
                 this.prizes.drawPrizes(ctx);
@@ -116,6 +124,9 @@
                 this.hitEdge();
                 this.bear.hasBearHitMushroom(this.mushroom);
                 this.bear.hasAnimalHitPrize(this.prizes.prizes);
+                requestAnimFrame(function(){
+                    that.loop();
+                });
             },
             hitEdge : function() {
                 var animal = this.bear;
@@ -159,7 +170,7 @@
         //bear
         function Bear(x, y, img, src) {
             Sprite.call(this, x, y, img, 'bear');
-            this.speed = 2;//不变常量,熊开始的速度  
+            this.speed = 3;//不变常量,熊开始的速度  
             this.bearAngle = 2;
             this.angle = 0;
             this.horizontalSpeed = this.speed;
@@ -216,7 +227,8 @@
                     //判断碰撞
                     if(this.CheckHit(prize,0))
                     {
-                        prize.hit = true;
+                        // prize.hit = true;
+                        prize.spinning = true;
                         //熊反弹下沉
                         this.verticalSpeed = this.speed;
                     }
@@ -228,6 +240,8 @@
             Sprite.call(this,x, y, img, 'prize');
             this.prizes = [];
             this.hit = false;
+            this.angle = 0;
+            this.spinning = false;
         }
         Prize.prototype = new Sprite();
         Prize.prototype.initPrizes = function(imgs) {
@@ -261,7 +275,25 @@
             for(var i=0; i<prizes.length; i++){
                 var curPrize = prizes[i];
                 if (!curPrize.hit) {
-                    ctx.drawImage(curPrize.image, curPrize.x, curPrize.y);
+                    if (curPrize.spinning) {
+                        curPrize.angle += 10;
+                        ctx.save();
+                        ctx.translate(curPrize.x + (curPrize.image.width/2), curPrize.y + (curPrize.image.height/2));
+                    
+                        //Perform the rotation based on the current prize angle
+                        ctx.rotate(curPrize.angle * Math.PI/180);
+                        
+                        ctx.drawImage(curPrize.image, - (curPrize.image.width/2), - (curPrize.image.width/2));
+                        ctx.restore();
+                        
+                        if(curPrize.angle == 360)
+                        {
+                            curPrize.hit = true;
+                        }
+                        
+                    } else {
+                        ctx.drawImage(curPrize.image, curPrize.x, curPrize.y);
+                    }
                 }
             }
         }
